@@ -1,6 +1,7 @@
 ﻿using InputManager;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,73 @@ namespace InputSim
 {
     class ArduinoInterface
     {
+        public class KeyboardConfig
+        {
+            public KeyboardConfig()
+            {
+                this.Crouch = Keys.Shift;
+                this.W = Keys.W;
+                this.A = Keys.A;
+                this.S = Keys.S;
+                this.D = Keys.D;
+            }
+
+            public Keys Crouch
+            {
+                set;
+                get;
+            }
+
+            public Keys W
+            {
+                set;
+                get;
+            }
+
+            public Keys A
+            {
+                set;
+                get;
+            }
+
+            public Keys S
+            {
+                set;
+                get;
+            }
+
+            public Keys D
+            {
+                set;
+                get;
+            }
+
+            public void LoadConfig(Stream config)
+            {
+                StreamReader reader = new StreamReader(config);
+                int iCrouch, iW, iA, iS, iD;
+                try
+                {
+                    if (!int.TryParse(reader.ReadLine(), out iCrouch))
+                        return;
+                    Crouch = (Keys)iCrouch;
+                    if (!int.TryParse(reader.ReadLine(), out iW))
+                        return;
+                    W = (Keys)iW;
+                    if (!int.TryParse(reader.ReadLine(), out iA))
+                        return;
+                    A = (Keys)iA;
+                    if (!int.TryParse(reader.ReadLine(), out iS))
+                        return;
+                    S = (Keys)iS;
+                    if (!int.TryParse(reader.ReadLine(), out iD))
+                        return;
+                    D = (Keys)iD;
+                }
+                catch (Exception) { }
+            }
+        }
+
         [Flags]
         enum Buttons
         {
@@ -30,34 +98,22 @@ namespace InputSim
             get;
         }
 
-        public Keys Crouch
+        public bool InvertX
         {
             set;
             get;
         }
 
-        public Keys W
+        public bool InvertY
         {
             set;
             get;
         }
 
-        public Keys A
+        public KeyboardConfig Config
         {
-            set;
             get;
-        }
-
-        public Keys S
-        {
             set;
-            get;
-        }
-
-        public Keys D
-        {
-            set;
-            get;
         }
 
         private SerialPort port;
@@ -74,12 +130,11 @@ namespace InputSim
         public ArduinoInterface(string port)
         {
             this.port = new SerialPort(port, 9600);
+        }
+
+        public void Open()
+        {
             this.port.Open();
-            this.Crouch = Keys.Shift;
-            this.W = Keys.W;
-            this.A = Keys.A;
-            this.S = Keys.S;
-            this.D = Keys.D;
             this.MouseSensitivity = 1.0f;
             pumpThread = new Thread(new ThreadStart(this.pumpData));
             pumpThread.Start();
@@ -90,11 +145,18 @@ namespace InputSim
         {
             while (run)
             {
-                string[] parts = port.ReadLine().Split(',');
+                string[] parts = null;
+                try
+                {
+                    parts = port.ReadLine().Split(',');
+                }
+                catch (Exception) { continue; }
                 if (parts.Length == 3)
                 {
                     float xvel = 0.0f, yvel = 0.0f;
-                    if (!float.TryParse(parts[0], out xvel) && !float.TryParse(parts[1], out yvel))
+                    if (!float.TryParse(parts[0], out xvel))
+                        return;
+                    if (!float.TryParse(parts[1], out yvel))
                         return;
                     // [unused] [d] [s] [a] [w] [crouch] [rightclick] [leftclick]
                     Buttons but = (Buttons)Convert.ToInt32(parts[2].Replace("\r", ""), 16);
@@ -106,7 +168,8 @@ namespace InputSim
                     bool S = (but & Buttons.S) != Buttons.None;
                     bool D = (but & Buttons.D) != Buttons.None;
 
-                    Mouse.MoveRelative((int)(xvel * MouseSensitivity), (int)(yvel * MouseSensitivity));
+                    Console.WriteLine(parts[0] + "," + parts[1] + "," + parts[2]);
+                    Mouse.MoveRelative((int)(xvel * MouseSensitivity) * (InvertX ? -1 : 1), (int)(yvel * MouseSensitivity) * (InvertY ? -1 : 1));
 
                     if (leftClick && !pleftClick)
                         Mouse.ButtonDown(Mouse.MouseKeys.Left);
@@ -119,29 +182,29 @@ namespace InputSim
                         Mouse.ButtonUp(Mouse.MouseKeys.Right);
 
                     if (crouch && !pcrouch)
-                        Keyboard.KeyDown(this.Crouch);
+                        Keyboard.KeyDown(this.Config.Crouch);
                     if (!crouch && pcrouch)
-                        Keyboard.KeyUp(this.Crouch);
+                        Keyboard.KeyUp(this.Config.Crouch);
 
                     if (W && !pW)
-                        Keyboard.KeyDown(this.W);
+                        Keyboard.KeyDown(this.Config.W);
                     if (!W && pW)
-                        Keyboard.KeyUp(this.W);
+                        Keyboard.KeyUp(this.Config.W);
 
                     if (A && !pA)
-                        Keyboard.KeyDown(this.A);
+                        Keyboard.KeyDown(this.Config.A);
                     if (!A && pA)
-                        Keyboard.KeyUp(this.A);
+                        Keyboard.KeyUp(this.Config.A);
 
                     if (S && !pS)
-                        Keyboard.KeyDown(this.S);
+                        Keyboard.KeyDown(this.Config.S);
                     if (!S && pS)
-                        Keyboard.KeyUp(this.S);
+                        Keyboard.KeyUp(this.Config.S);
 
                     if (D && !pD)
-                        Keyboard.KeyDown(this.D);
+                        Keyboard.KeyDown(this.Config.D);
                     if (!D && pD)
-                        Keyboard.KeyUp(this.D);
+                        Keyboard.KeyUp(this.Config.D);
 
                     pleftClick = leftClick;
                     prightClick = rightClick;

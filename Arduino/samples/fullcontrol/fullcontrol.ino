@@ -16,6 +16,7 @@
 #define A 9
 #define S 8
 #define D 7
+#define JUMP 6
 
 void setup()
 {
@@ -27,11 +28,12 @@ void setup()
   pinMode(A, INPUT);
   pinMode(S, INPUT);
   pinMode(D, INPUT);
+  pinMode(JUMP, INPUT);
 }
 
 void loop()
 {
   float x = (float)(analogRead(XPIN) - XCENTER) / (float)(XMAX - XMIN);
   float y = (float)(analogRead(YPIN) - YCENTER) / (float)(YMAX - YMIN);
-  Joystick::sendData(x, y, digitalRead(CLICKPIN), digitalRead(RIGHTCLICKPIN), digitalRead(CROUCH), digitalRead(W), digitalRead(A), digitalRead(S), digitalRead(D));
+  Joystick::sendData(x, y, digitalRead(CLICKPIN), digitalRead(RIGHTCLICKPIN), digitalRead(CROUCH), digitalRead(W), digitalRead(A), digitalRead(S), digitalRead(D), digitalRead(JUMP));
 }

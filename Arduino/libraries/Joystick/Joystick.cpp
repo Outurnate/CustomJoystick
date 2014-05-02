@@ -6,7 +6,7 @@ void Joystick::begin()
   Serial.begin(9600);
 }
 
-void Joystick::sendData(float xvel, float yvel, boolean leftclick, boolean rightclick, boolean crouch, boolean w, boolean a, boolean s, boolean d)
+void Joystick::sendData(float xvel, float yvel, boolean leftclick, boolean rightclick, boolean crouch, boolean w, boolean a, boolean s, boolean d, boolean jump)
 {
   Serial.print(xvel, 6);
   Serial.print(',');
@@ -20,5 +20,6 @@ void Joystick::sendData(float xvel, float yvel, boolean leftclick, boolean right
   packet += a          << 4;
   packet += s          << 5;
   packet += d          << 6;
+  packet += jump       << 7;
   Serial.println(packet, HEX);
 }

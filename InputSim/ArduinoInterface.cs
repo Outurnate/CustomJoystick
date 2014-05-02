@@ -17,6 +17,7 @@ namespace InputSim
             public KeyboardConfig()
             {
                 this.Crouch = Keys.Shift;
+                this.Jump = Keys.Space;
                 this.W = Keys.W;
                 this.A = Keys.A;
                 this.S = Keys.S;
@@ -24,6 +25,12 @@ namespace InputSim
             }
 
             public Keys Crouch
+            {
+                set;
+                get;
+            }
+
+            public Keys Jump
             {
                 set;
                 get;
@@ -56,12 +63,15 @@ namespace InputSim
             public void LoadConfig(Stream config)
             {
                 StreamReader reader = new StreamReader(config);
-                int iCrouch, iW, iA, iS, iD;
+                int iCrouch, iJump, iW, iA, iS, iD;
                 try
                 {
                     if (!int.TryParse(reader.ReadLine(), out iCrouch))
                         return;
                     Crouch = (Keys)iCrouch;
+                    if (!int.TryParse(reader.ReadLine(), out iJump))
+                        return;
+                    Jump = (Keys)iJump;
                     if (!int.TryParse(reader.ReadLine(), out iW))
                         return;
                     W = (Keys)iW;
@@ -89,7 +99,8 @@ namespace InputSim
             W = 8,
             A = 16,
             S = 32,
-            D = 64
+            D = 64,
+            Jump = 128
         }
 
         public float MouseSensitivity
@@ -120,6 +131,7 @@ namespace InputSim
         private bool pleftClick = false;
         private bool prightClick = false;
         private bool pcrouch = false;
+        private bool pjump = false;
         private bool pW = false;
         private bool pA = false;
         private bool pS = false;
@@ -167,6 +179,7 @@ namespace InputSim
                     bool A = (but & Buttons.A) != Buttons.None;
                     bool S = (but & Buttons.S) != Buttons.None;
                     bool D = (but & Buttons.D) != Buttons.None;
+                    bool jump = (but & Buttons.Jump) != Buttons.None;
 
                     Console.WriteLine(parts[0] + "," + parts[1] + "," + parts[2]);
                     Mouse.MoveRelative((int)(xvel * MouseSensitivity) * (InvertX ? -1 : 1), (int)(yvel * MouseSensitivity) * (InvertY ? -1 : 1));
@@ -206,6 +219,11 @@ namespace InputSim
                     if (!D && pD)
                         Keyboard.KeyUp(this.Config.D);
 
+                    if (jump && !pjump)
+                        Keyboard.KeyDown(this.Config.Jump);
+                    if (!jump && pjump)
+                        Keyboard.KeyUp(this.Config.Jump);
+
                     pleftClick = leftClick;
                     prightClick = rightClick;
                     pcrouch = crouch;
@@ -213,6 +231,7 @@ namespace InputSim
                     pA = A;
                     pS = S;
                     pD = D;
+                    pjump = jump;
                 }
             }
         }
